@@ -1,0 +1,50 @@
+#! /usr/bin/env ruby
+def login
+  print "Input your email: "
+  User.find_by(email: gets.chomp).id
+end
+
+def prompt_action
+  action = -1
+  until [0,1].include?(action)
+    puts <<-PROMPT
+      What do you want to do?
+      0. Create shortened URL
+      1. Visit Shortened URL
+    PROMPT
+    action = gets.chomp.to_i
+  end
+  action
+end
+
+def prompt_url
+  print "Type in the URL: "
+  gets.chomp
+end
+
+def shorten(long_url, user_id)
+  url = ShortenedUrl.create_for_user_and_long_url!(user_id, long_url)
+  url.short_url
+end
+
+def visit(short_url, user_id)
+  url = ShortenedUrl.find_by(short_url: short_url)
+  raise "Couldn't create visit" unless Visit.create(shortened_url_id: url.id, user_id: user_id)
+  puts "Launching #{url.long_url}...\nGoodbye!"
+  Launchy.open(url.long_url)
+end
+
+def run
+  user_id = login
+  action = prompt_action
+  if action == 1
+    visit(prompt_url,user_id)
+  else
+    puts "Short URL is: #{shorten(prompt_url, user_id)}"
+  end
+
+end
+
+if __FILE__ == $PROGRAM_NAME
+  run
+end
